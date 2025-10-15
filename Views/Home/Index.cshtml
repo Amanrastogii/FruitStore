@@ -1,0 +1,20 @@
+﻿@model IEnumerable<MyStore.Models.Fruit>
+
+@{
+    ViewData["Title"] = "Store Home";
+}
+
+<h2>Welcome to MyStore</h2>
+@foreach (var fruit in Model)
+{
+    <div>
+        <h3>@fruit.Name</h3>
+        <p>@fruit.Description</p>
+        <p>Price: @fruit.Price.ToString("C")</p>
+        <p>Stock: @fruit.Stock</p>
+        @if (!string.IsNullOrEmpty(fruit.ImagePath))
+        {
+            <img src="@fruit.ImagePath" style="max-width:100px;" />
+        }
+    </div>
+}

@@ -1,0 +1,14 @@
+﻿@model MyStore.Models.User
+
+<h2>Register</h2>
+<form asp-action="Register" method="post">
+    <input asp-for="FirstName" placeholder="First Name" /><br />
+    <input asp-for="LastName" placeholder="Last Name" /><br />
+    <input asp-for="Email" placeholder="Email" /><br />
+    <input asp-for="PasswordHash" type="password" placeholder="Password" /><br />
+    <select asp-for="Role">
+        <option value="Admin">Admin</option>
+        <option value="Customer">Customer</option>
+    </select><br />
+    <button type="submit">Register</button>
+</form>

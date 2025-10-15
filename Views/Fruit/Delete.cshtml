@@ -1,0 +1,13 @@
+﻿@model MyStore.Models.Fruit
+
+@{
+    ViewData["Title"] = "Delete Fruit";
+}
+
+<h2>Delete Fruit</h2>
+<form method="post" asp-action="Delete">
+    <input type="hidden" asp-for="Id" />
+    <p>Are you sure you want to delete <strong>@Model.Name</strong>?</p>
+    <button type="submit" class="btn btn-danger">Delete</button>
+    <a asp-action="List" class="btn btn-secondary">Cancel</a>
+</form>

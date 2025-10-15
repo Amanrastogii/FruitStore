@@ -1,0 +1,36 @@
+﻿@model MyStore.Models.Fruit
+
+@{
+    ViewData["Title"] = "Edit Fruit";
+}
+
+<h2>Edit Fruit</h2>
+<form method="post" asp-action="Edit">
+    <input type="hidden" asp-for="Id" />
+    <div class="mb-3">
+        <label>Name</label>
+        <input asp-for="Name" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label>Description</label>
+        <input asp-for="Description" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label>Price</label>
+        <input asp-for="Price" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label>Stock</label>
+        <input asp-for="Stock" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label>Image Path</label>
+        <input asp-for="ImagePath" class="form-control" />
+        @if (!string.IsNullOrEmpty(Model.ImagePath))
+        {
+            <img src="/@Model.ImagePath" alt="@Model.Name" width="80" height="80" />
+        }
+    </div>
+    <button type="submit" class="btn btn-primary">Update</button>
+    <a asp-action="List" class="btn btn-secondary">Cancel</a>
+</form>

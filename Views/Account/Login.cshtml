@@ -1,0 +1,8 @@
+﻿@model MyStore.Models.User
+
+<h2>Login</h2>
+<form asp-action="Login" method="post">
+    <input asp-for="Email" placeholder="Email" /><br />
+    <input asp-for="PasswordHash" type="password" placeholder="Password" /><br />
+    <button type="submit">Login</button>
+</form>

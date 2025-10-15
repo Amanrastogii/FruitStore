@@ -1,0 +1,31 @@
+﻿@model MyStore.Models.Fruit
+
+@{
+    ViewData["Title"] = "Add Fruit";
+}
+
+<h2>Add Fruit</h2>
+<form method="post" asp-action="Create">
+    <div class="mb-3">
+        <label>Name</label>
+        <input asp-for="Name" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label>Description</label>
+        <input asp-for="Description" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label>Price</label>
+        <input asp-for="Price" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label>Stock</label>
+        <input asp-for="Stock" class="form-control" />
+    </div>
+    <div class="mb-3">
+        <label>Image Path (e.g. images/apple.jpg)</label>
+        <input asp-for="ImagePath" class="form-control" />
+    </div>
+    <button type="submit" class="btn btn-success">Save</button>
+    <a asp-action="List" class="btn btn-secondary">Cancel</a>
+</form>
