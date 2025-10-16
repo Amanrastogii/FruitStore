@@ -10,19 +10,18 @@
 
 	<ItemGroup>
 		<!-- PostgreSQL Provider instead of SQL Server -->
-		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
 		<!-- Remove SQL Server packages -->
 		<!-- <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" /> -->
-
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.10">
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		  <PrivateAssets>all</PrivateAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.10">
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		  <PrivateAssets>all</PrivateAssets>
 		</PackageReference>
 		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.0" />
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.10" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Session" Version="2.2.0" />
 	</ItemGroup>
