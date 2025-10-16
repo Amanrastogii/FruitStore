@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MyStore.Data;
-using MyStore.Models; // or your model namespace
+using MyStore.Models; 
 
 namespace MyStore.Controllers
 {
