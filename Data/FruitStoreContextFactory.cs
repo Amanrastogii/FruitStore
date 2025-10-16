@@ -8,8 +8,11 @@ namespace MyStore.Data
         public FruitStoreContext CreateDbContext(string[] args)
         {
             var optionsBuilder = new DbContextOptionsBuilder<FruitStoreContext>();
-            optionsBuilder.UseSqlServer("Server=LAPTOP-MF7L2NRO;Database=MyStore;Trusted_Connection=true;TrustServerCertificate=true;Encrypt=true;");
+            // Use configuration/environment variable instead of hardcoded connection string on cloud
+            var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") ?? "";
+            optionsBuilder.UseSqlServer(connectionString);
             return new FruitStoreContext(optionsBuilder.Options);
         }
     }
+
 }

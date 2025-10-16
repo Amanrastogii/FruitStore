@@ -22,6 +22,7 @@ namespace MyStore
                 Console.WriteLine("Configuring services...");
                 builder.Services.AddControllersWithViews().AddSessionStateTempDataProvider();
 
+                // DO NOT use hardcoded connection string!
                 builder.Services.AddDbContext<FruitStoreContext>(options =>
                     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
                         sqlOptions => sqlOptions.EnableRetryOnFailure(
@@ -89,6 +90,14 @@ namespace MyStore
                 // ===== Map API Controllers for Swagger =====
                 app.MapControllers(); // Needed for attribute-based routing (like [ApiController])
                 // ===========================================
+
+                // ====== AUTO APPLY EF CORE MIGRATIONS ON BOOT (IMPORTANT FOR CLOUD) ======
+                using (var scope = app.Services.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<FruitStoreContext>();
+                    db.Database.Migrate();
+                }
+                // ========================================================================
 
                 Console.WriteLine("About to call app.Run()");
                 app.Run();
