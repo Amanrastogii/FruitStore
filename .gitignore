@@ -5,3 +5,5 @@ obj/
 *.user
 appsettings.Development.json
 appsettings.json   
+appsettings.Local.json
+
