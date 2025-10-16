@@ -40,13 +40,17 @@ namespace MyStore.Data
 
         private string ConvertPostgresUrl(string postgresUrl)
         {
-            // Convert postgres://user:password@host:port/database to Npgsql format
-            if (postgresUrl.StartsWith("postgres://"))
+            if (postgresUrl.StartsWith("postgres://") || postgresUrl.StartsWith("postgresql://"))
             {
                 var uri = new Uri(postgresUrl);
-                return $"Host={uri.Host};Port={uri.Port};Database={uri.LocalPath.TrimStart('/')};Username={uri.UserInfo.Split(':')};Password={uri.UserInfo.Split(':')};SSL Mode=Require;Trust Server Certificate=true";
+                var userInfo = uri.UserInfo.Split(':');
+
+                // CRITICAL FIX: Use default port 5432 if URI doesn't specify one
+                var port = uri.Port > 0 ? uri.Port : 5432;
+
+                return $"Host={uri.Host};Port={port};Database={uri.LocalPath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
             }
-            return postgresUrl; // Already in correct format
+            return postgresUrl;
         }
 
         private string MaskConnectionString(string connectionString)
