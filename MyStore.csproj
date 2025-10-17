@@ -5,26 +5,48 @@
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<UserSecretsId>0b9937d9-90b5-40a9-9c25-862f6724f3e3</UserSecretsId>
-		<RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+
+		<!-- CONDITIONAL RUNTIME: Only use linux-x64 for publishing, not local development -->
+		<RuntimeIdentifier Condition="'$(Configuration)' == 'Release' or '$(PublishProfile)' != ''">linux-x64</RuntimeIdentifier>
+
+		<!-- Docker/Render optimizations -->
+		<PublishReadyToRun>false</PublishReadyToRun>
+		<InvariantGlobalization>false</InvariantGlobalization>
+		<PublishTrimmed>false</PublishTrimmed>
+
+		<!-- Disable XML documentation warnings -->
+		<GenerateDocumentationFile>false</GenerateDocumentationFile>
+		<NoWarn>$(NoWarn);1591</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<!-- PostgreSQL Provider instead of SQL Server -->
-		<!-- Remove SQL Server packages -->
-		<!-- <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" /> -->
+		<!-- PostgreSQL Provider -->
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.10" />
+
+		<!-- Entity Framework Core Tools -->
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.10">
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		  <PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.10">
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		  <PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.0" />
-		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.10" />
-		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Session" Version="2.2.0" />
+
+		<!-- Code Generation (Optional - only if you use scaffolding) -->
+		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
+
+		<!-- API Documentation -->
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.1" />
+
+		<!-- JSON Serialization (Built into .NET 8, but explicit version for consistency) -->
+		<PackageReference Include="System.Text.Json" Version="8.0.5" />
+	</ItemGroup>
+
+	<!-- Remove unnecessary packages for cleaner build -->
+	<ItemGroup Label="Remove if not using Redis">
+		<!-- Only include Redis if you're actually using distributed caching -->
+		<!-- <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="8.0.10" /> -->
 	</ItemGroup>
 
 </Project>
-

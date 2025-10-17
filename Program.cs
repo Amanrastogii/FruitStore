@@ -23,12 +23,40 @@ namespace MyStore
                 Console.WriteLine("Configuring services...");
                 builder.Services.AddControllersWithViews().AddSessionStateTempDataProvider();
 
-                // CRITICAL: Use PostgreSQL instead of SQL Server
+                // ====== ADD CORS CONFIGURATION ======
+                Console.WriteLine("Configuring CORS...");
+                builder.Services.AddCors(options =>
+                {
+                    options.AddPolicy("AllowReactApp", policy =>
+                    {
+                        policy.WithOrigins(
+                                "http://localhost:3000",           // React dev server
+                                "http://localhost:3001",           // Alternative React port
+                                "http://localhost:5173",           // Vite default port
+                                "https://your-frontend-app.netlify.app",  // Add your production frontend URL here
+                                "https://your-frontend-app.vercel.app"    // Add your production frontend URL here
+                            )
+                            .AllowAnyMethod()                      // GET, POST, PUT, DELETE, etc.
+                            .AllowAnyHeader()                      // Any headers
+                            .AllowCredentials();                   // Allow cookies/sessions
+                    });
+
+                    // Development-only permissive policy
+                    options.AddPolicy("AllowAll", policy =>
+                    {
+                        policy.AllowAnyOrigin()
+                            .AllowAnyMethod()
+                            .AllowAnyHeader();
+                    });
+                });
+                // ====================================
+
+                // Database Configuration
                 var connectionString = GetConnectionString(builder.Configuration);
                 Console.WriteLine($"Using connection string: {MaskConnectionString(connectionString)}");
 
                 builder.Services.AddDbContext<FruitStoreContext>(options =>
-                    options.UseNpgsql(connectionString, // Changed from UseSqlServer to UseNpgsql
+                    options.UseNpgsql(connectionString,
                         npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(
                             maxRetryCount: 5,
                             maxRetryDelay: TimeSpan.FromSeconds(30),
@@ -36,16 +64,21 @@ namespace MyStore
 
                 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
                 builder.Services.AddDistributedMemoryCache();
+
+                // ====== UPDATE SESSION CONFIGURATION FOR CORS ======
                 builder.Services.AddSession(options =>
                 {
                     options.IdleTimeout = TimeSpan.FromMinutes(30);
                     options.Cookie.HttpOnly = true;
                     options.Cookie.IsEssential = true;
-                    options.Cookie.SameSite = SameSiteMode.Strict;
+                    options.Cookie.SameSite = SameSiteMode.None;           // CHANGED: Allow cross-site
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // ADDED: Require HTTPS
                 });
+                // ==================================================
+
                 builder.Services.AddHttpContextAccessor();
 
-                // ====== Swagger Setup ======
+                // Swagger Setup
                 builder.Services.AddEndpointsApiExplorer();
                 builder.Services.AddSwaggerGen(options =>
                 {
@@ -56,9 +89,8 @@ namespace MyStore
                         Description = "API for Fruit Store CRUD operations"
                     });
                 });
-                // ===========================
 
-                // CRITICAL: Configure Kestrel for Render deployment
+                // Kestrel Configuration
                 var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
                 Console.WriteLine($"Configuring Kestrel to listen on port: {port}");
                 builder.WebHost.ConfigureKestrel(options =>
@@ -70,43 +102,43 @@ namespace MyStore
                 var app = builder.Build();
 
                 Console.WriteLine("Configuring middleware...");
+
+                // ====== ENABLE CORS MIDDLEWARE (MUST BE BEFORE UseRouting) ======
                 if (app.Environment.IsDevelopment())
                 {
+                    Console.WriteLine("Development mode: Using permissive CORS policy");
+                    app.UseCors("AllowAll");           // More permissive for development
                     app.UseDeveloperExceptionPage();
                 }
                 else
                 {
+                    Console.WriteLine("Production mode: Using restricted CORS policy");
+                    app.UseCors("AllowReactApp");      // Restricted for production
                     app.UseExceptionHandler("/Home/Error");
-                    // Don't use HSTS in production on Render (they handle HTTPS)
-                    // app.UseHsts();
                 }
-
-                // Don't redirect to HTTPS - Render handles this
-                // app.UseHttpsRedirection();
+                // ================================================================
 
                 app.UseStaticFiles();
                 app.UseRouting();
                 app.UseSession();
                 app.UseAuthorization();
 
-                // ====== Enable Swagger in Production for Testing ======
+                // Swagger (enabled in all environments for testing)
                 app.UseSwagger();
                 app.UseSwaggerUI(c =>
                 {
                     c.SwaggerEndpoint("/swagger/v1/swagger.json", "MyStore API v1");
                     c.RoutePrefix = "swagger";
                 });
-                // =====================================================
 
                 app.MapControllerRoute(
                     name: "default",
                     pattern: "{controller=Admin}/{action=Login}/{id?}");
 
-                // ===== Map API Controllers for Swagger =====
-                app.MapControllers(); // Needed for attribute-based routing (like [ApiController])
-                // ===========================================
+                // Map API Controllers
+                app.MapControllers();
 
-                // ====== AUTO APPLY EF CORE MIGRATIONS ON BOOT (IMPORTANT FOR CLOUD) ======
+                // Auto-apply EF Core Migrations
                 using (var scope = app.Services.CreateScope())
                 {
                     try
@@ -122,7 +154,6 @@ namespace MyStore
                         throw;
                     }
                 }
-                // ========================================================================
 
                 Console.WriteLine("About to call app.Run()");
                 app.Run();
@@ -136,7 +167,7 @@ namespace MyStore
 
         private static string GetConnectionString(IConfiguration configuration)
         {
-            // First try to get from environment variable (Render uses this approach)
+            // First try environment variable (Render uses this)
             var envConnectionString = Environment.GetEnvironmentVariable("DATABASE_URL");
             if (!string.IsNullOrEmpty(envConnectionString))
             {
@@ -170,8 +201,7 @@ namespace MyStore
                         throw new InvalidOperationException("Invalid DATABASE_URL format: username and password not found");
                     }
 
-                    // CRITICAL FIX: PostgreSQL default port is 5432
-                    // If URI.Port is -1 (not specified), use default 5432
+                    // PostgreSQL default port is 5432
                     var port = uri.Port > 0 ? uri.Port : 5432;
 
                     var database = uri.LocalPath.TrimStart('/');
