@@ -5,31 +5,41 @@
 }
 
 <h2>Edit Fruit</h2>
-<form method="post" asp-action="Edit">
+<form method="post" asp-action="Edit" enctype="multipart/form-data">
     <input type="hidden" asp-for="Id" />
     <div class="mb-3">
         <label>Name</label>
-        <input asp-for="Name" class="form-control" />
+        <input asp-for="Name" class="form-control" required />
     </div>
     <div class="mb-3">
         <label>Description</label>
-        <input asp-for="Description" class="form-control" />
+        <input asp-for="Description" class="form-control" required />
     </div>
     <div class="mb-3">
         <label>Price</label>
-        <input asp-for="Price" class="form-control" />
+        <input asp-for="Price" class="form-control" type="number" step="0.01" required />
     </div>
     <div class="mb-3">
         <label>Stock</label>
-        <input asp-for="Stock" class="form-control" />
+        <input asp-for="Stock" class="form-control" type="number" required />
     </div>
     <div class="mb-3">
-        <label>Image Path</label>
-        <input asp-for="ImagePath" class="form-control" />
+        <label>Current Image</label>
         @if (!string.IsNullOrEmpty(Model.ImagePath))
         {
-            <img src="/@Model.ImagePath" alt="@Model.Name" width="80" height="80" />
+        <div class="mb-2">
+            <img src="/@Model.ImagePath" alt="@Model.Name" class="img-thumbnail" style="max-width: 200px; max-height: 200px;" />
+        </div>
         }
+        else
+        {
+        <p class="text-muted">No image uploaded</p>
+        }
+    </div>
+    <div class="mb-3">
+        <label>Upload New Image (optional)</label>
+        <input type="file" name="imageFile" class="form-control" accept="image/*" />
+        <small class="form-text text-muted">Leave empty to keep current image. Accepted formats: JPG, PNG, GIF, WEBP, JFIF</small>
     </div>
     <button type="submit" class="btn btn-primary">Update</button>
     <a asp-action="List" class="btn btn-secondary">Cancel</a>
