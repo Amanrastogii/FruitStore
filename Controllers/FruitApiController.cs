@@ -1,6 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MyStore.Data;
 using MyStore.Models;
+using MyStore.DTOs.Fruit;
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace MyStore.Controllers
 {
@@ -17,101 +22,219 @@ namespace MyStore.Controllers
             _environment = environment;
         }
 
-        // GET: api/FruitApi
+        /// <summary>
+        /// GET: api/FruitApi - Get all fruits with image URLs
+        /// </summary>
         [HttpGet]
         public IActionResult GetAll()
         {
-            return Ok(_context.Fruits.ToList());
+            try
+            {
+                var fruits = _context.Fruits.ToList();
+
+                // Map to DTO with image URLs
+                var response = fruits.Select(f => new FruitResponseDto
+                {
+                    Id = f.Id,
+                    Name = f.Name,
+                    Description = f.Description,
+                    Price = f.Price,
+                    Stock = f.Stock,
+                    ImagePath = f.ImagePath,
+                    ImageUrl = GetImageUrl(f.ImagePath)
+                }).ToList();
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error retrieving fruits", error = ex.Message });
+            }
         }
 
-        // GET: api/FruitApi/5
+        /// <summary>
+        /// GET: api/FruitApi/5 - Get single fruit by ID
+        /// </summary>
         [HttpGet("{id}")]
         public IActionResult Get(int id)
         {
-            var fruit = _context.Fruits.Find(id);
-            return fruit is null ? NotFound() : Ok(fruit);
-        }
-
-        // POST: api/FruitApi
-        [HttpPost]
-        public async Task<IActionResult> Create([FromForm] FruitUploadDto fruitDto)
-        {
-            var fruit = new Fruit
+            try
             {
-                Name = fruitDto.Name,
-                Description = fruitDto.Description,
-                Price = fruitDto.Price,
-                Stock = fruitDto.Stock
-            };
+                var fruit = _context.Fruits.Find(id);
+                if (fruit == null)
+                    return NotFound(new { message = $"Fruit with ID {id} not found" });
 
-            // Handle image upload
-            if (fruitDto.Image != null && fruitDto.Image.Length > 0)
-            {
-                fruit.ImagePath = await SaveImageAsync(fruitDto.Image);
-            }
-
-            _context.Fruits.Add(fruit);
-            _context.SaveChanges();
-            return CreatedAtAction(nameof(Get), new { id = fruit.Id }, fruit);
-        }
-
-        // PUT: api/FruitApi/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromForm] FruitUploadDto fruitDto)
-        {
-            var existing = _context.Fruits.Find(id);
-            if (existing is null) return NotFound();
-
-            existing.Name = fruitDto.Name;
-            existing.Description = fruitDto.Description;
-            existing.Price = fruitDto.Price;
-            existing.Stock = fruitDto.Stock;
-
-            // Handle image upload if a new image is provided
-            if (fruitDto.Image != null && fruitDto.Image.Length > 0)
-            {
-                // Delete old image if exists
-                if (!string.IsNullOrEmpty(existing.ImagePath))
+                var response = new FruitResponseDto
                 {
-                    DeleteImage(existing.ImagePath);
+                    Id = fruit.Id,
+                    Name = fruit.Name,
+                    Description = fruit.Description,
+                    Price = fruit.Price,
+                    Stock = fruit.Stock,
+                    ImagePath = fruit.ImagePath,
+                    ImageUrl = GetImageUrl(fruit.ImagePath)
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error retrieving fruit", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// POST: api/FruitApi - Create new fruit with optional image
+        /// </summary>
+        [HttpPost]
+        public async Task<IActionResult> Create([FromForm] FruitUploadDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var fruit = new Fruit
+                {
+                    Name = dto.Name,
+                    Description = dto.Description,
+                    Price = dto.Price,
+                    Stock = dto.Stock
+                };
+
+                // Handle image upload
+                if (dto.Image != null && dto.Image.Length > 0)
+                {
+                    fruit.ImagePath = await SaveImageAsync(dto.Image);
                 }
 
-                existing.ImagePath = await SaveImageAsync(fruitDto.Image);
-            }
+                _context.Fruits.Add(fruit);
+                _context.SaveChanges();
 
-            _context.SaveChanges();
-            return NoContent();
+                var response = new FruitResponseDto
+                {
+                    Id = fruit.Id,
+                    Name = fruit.Name,
+                    Description = fruit.Description,
+                    Price = fruit.Price,
+                    Stock = fruit.Stock,
+                    ImagePath = fruit.ImagePath,
+                    ImageUrl = GetImageUrl(fruit.ImagePath)
+                };
+
+                return CreatedAtAction(nameof(Get), new { id = fruit.Id }, response);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error creating fruit", error = ex.Message });
+            }
         }
 
-        // DELETE: api/FruitApi/5
+        /// <summary>
+        /// PUT: api/FruitApi/5 - Update existing fruit
+        /// </summary>
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromForm] FruitUploadDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var fruit = _context.Fruits.Find(id);
+                if (fruit == null)
+                    return NotFound(new { message = $"Fruit with ID {id} not found" });
+
+                // Update properties
+                fruit.Name = dto.Name;
+                fruit.Description = dto.Description;
+                fruit.Price = dto.Price;
+                fruit.Stock = dto.Stock;
+
+                // Handle new image upload
+                if (dto.Image != null && dto.Image.Length > 0)
+                {
+                    // Delete old image if exists
+                    if (!string.IsNullOrEmpty(fruit.ImagePath))
+                        DeleteImage(fruit.ImagePath);
+
+                    fruit.ImagePath = await SaveImageAsync(dto.Image);
+                }
+
+                _context.SaveChanges();
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error updating fruit", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// DELETE: api/FruitApi/5 - Delete fruit and its image
+        /// </summary>
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
-            var fruit = _context.Fruits.Find(id);
-            if (fruit is null) return NotFound();
-
-            // Delete associated image file if exists
-            if (!string.IsNullOrEmpty(fruit.ImagePath))
+            try
             {
-                DeleteImage(fruit.ImagePath);
-            }
+                var fruit = _context.Fruits.Find(id);
+                if (fruit == null)
+                    return NotFound(new { message = $"Fruit with ID {id} not found" });
 
-            _context.Fruits.Remove(fruit);
-            _context.SaveChanges();
-            return NoContent();
+                // Delete associated image file
+                if (!string.IsNullOrEmpty(fruit.ImagePath))
+                    DeleteImage(fruit.ImagePath);
+
+                _context.Fruits.Remove(fruit);
+                _context.SaveChanges();
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error deleting fruit", error = ex.Message });
+            }
         }
 
-        // Helper method to save uploaded image
+        #region Helper Methods
+
+        /// <summary>
+        /// Generate full image URL for API responses
+        /// </summary>
+        private string? GetImageUrl(string? imagePath)
+        {
+            if (string.IsNullOrEmpty(imagePath))
+                return null;
+
+            // Build full URL: https://fruitstore-1.onrender.com/images/abc.jpg
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            return $"{baseUrl}/{imagePath}";
+        }
+
+        /// <summary>
+        /// Save uploaded image to wwwroot/images directory
+        /// </summary>
         private async Task<string> SaveImageAsync(IFormFile image)
         {
-            // Validate file
+            // Validate file type
             var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".jfif" };
             var extension = Path.GetExtension(image.FileName).ToLowerInvariant();
 
             if (!allowedExtensions.Contains(extension))
-            {
-                throw new InvalidOperationException("Invalid file type. Only image files are allowed.");
-            }
+                throw new InvalidOperationException($"Invalid file type '{extension}'. Only image files (JPG, PNG, GIF, WEBP, JFIF) are allowed.");
+
+            // Validate file size (5MB max)
+            if (image.Length > 5 * 1024 * 1024)
+                throw new InvalidOperationException("File size cannot exceed 5MB.");
 
             // Generate unique filename
             var fileName = $"{Guid.NewGuid()}{extension}";
@@ -119,23 +242,25 @@ namespace MyStore.Controllers
 
             // Create images directory if it doesn't exist
             if (!Directory.Exists(imagesPath))
-            {
                 Directory.CreateDirectory(imagesPath);
-            }
 
             var filePath = Path.Combine(imagesPath, fileName);
 
-            // Save file
+            // Save file to disk
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
                 await image.CopyToAsync(stream);
             }
 
+            Console.WriteLine($"Image saved: {fileName}");
+
             // Return relative path for database storage
             return $"images/{fileName}";
         }
 
-        // Helper method to delete image
+        /// <summary>
+        /// Delete image file from disk
+        /// </summary>
         private void DeleteImage(string imagePath)
         {
             try
@@ -144,23 +269,16 @@ namespace MyStore.Controllers
                 if (System.IO.File.Exists(fullPath))
                 {
                     System.IO.File.Delete(fullPath);
+                    Console.WriteLine($"Image deleted: {imagePath}");
                 }
             }
             catch (Exception ex)
             {
-                // Log error but don't fail the operation
                 Console.WriteLine($"Error deleting image: {ex.Message}");
+                // Don't throw - deletion failure shouldn't stop the operation
             }
         }
-    }
 
-    // DTO for handling file uploads with form data
-    public class FruitUploadDto
-    {
-        public string Name { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public decimal Price { get; set; }
-        public int Stock { get; set; }
-        public IFormFile? Image { get; set; }
+        #endregion
     }
 }
