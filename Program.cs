@@ -160,7 +160,7 @@ namespace MyStore
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Fatal startup error: " + ex);
+                Console.WriteLine("Fatal startup error: " + ex.Message);
                 throw;
             }
         }
