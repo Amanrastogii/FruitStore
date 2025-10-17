@@ -160,9 +160,36 @@ namespace MyStore
             // Convert postgres://user:password@host:port/database to Npgsql format
             if (postgresUrl.StartsWith("postgres://") || postgresUrl.StartsWith("postgresql://"))
             {
-                var uri = new Uri(postgresUrl);
-                var userInfo = uri.UserInfo.Split(':'); // FIXED: Store the split result
-                return $"Host={uri.Host};Port={uri.Port};Database={uri.LocalPath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+                try
+                {
+                    var uri = new Uri(postgresUrl);
+                    var userInfo = uri.UserInfo.Split(':');
+
+                    if (userInfo.Length != 2)
+                    {
+                        throw new InvalidOperationException("Invalid DATABASE_URL format: username and password not found");
+                    }
+
+                    // CRITICAL FIX: PostgreSQL default port is 5432
+                    // If URI.Port is -1 (not specified), use default 5432
+                    var port = uri.Port > 0 ? uri.Port : 5432;
+
+                    var database = uri.LocalPath.TrimStart('/');
+                    if (string.IsNullOrEmpty(database))
+                    {
+                        throw new InvalidOperationException("Invalid DATABASE_URL format: database name not found");
+                    }
+
+                    var connectionString = $"Host={uri.Host};Port={port};Database={database};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+
+                    Console.WriteLine($"Converted URL to connection string with port: {port}");
+                    return connectionString;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error converting DATABASE_URL: {ex.Message}");
+                    throw new InvalidOperationException($"Failed to parse DATABASE_URL: {ex.Message}", ex);
+                }
             }
             return postgresUrl; // Already in correct format
         }
