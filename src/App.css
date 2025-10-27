@@ -1,0 +1,12 @@
+.fruitCard {
+  position: relative;
+}
+
+.delete {
+  position: absolute;
+  right: 0;
+  cursor: pointer;
+  z-index: 10;
+  color: red;
+  fill: red;
+}
