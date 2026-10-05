@@ -385,6 +385,7 @@ FodyWeavers.xsd
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
+.vscode/*
 !.vscode/extensions.json
 *.code-workspace
 
@@ -480,4 +481,3 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
-config.bat
